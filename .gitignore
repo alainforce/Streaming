@@ -1,0 +1,51 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build
+dist/
+build/
+bin/
+
+# Backend specific
+tmdb-api/tmdb-api
+tmdb-api/.env
+tmdb-api/SCHEM.txt
+tmdb-api/newSheme.txt
+
+# Frontend specific
+Catus/dist/
+Catus/.env
+Catus/api_test_out.txt
+Catus/build_errors.txt
+Catus/output.txt
+Catus/tsc_error.txt
+Catus/tsc_errors.txt
+Catus/tsc_final.txt
+Catus/typescript_errors.txt

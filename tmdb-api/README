@@ -1,0 +1,56 @@
+## Architecture Decisions
+
+- **Layered architecture** (Handler → Service → Repository) with strict
+  unidirectional dependencies enforced by Go's `internal/` package system.
+
+- **Cache-aside pattern** with Redis. Cache misses fall through gracefully
+  to the TMDB API. Cache errors are non-fatal — the app serves live data
+  if Redis is unavailable.
+
+- **Connection pooling** for both PostgreSQL (pgxpool) and Redis to handle
+  concurrent requests without exhausting connections.
+
+- **Parameterized SQL queries** throughout — no string interpolation,
+  no SQL injection surface.
+
+- **Context propagation** on all I/O operations for timeout and
+  cancellation support.
+
+- **Aware of cache stampede** problem — current implementation is suitable
+  for low-to-medium traffic; production mitigation would use distributed
+  locking (e.g. Redlock).
+
+## Known Limitations & Production Considerations
+
+- **Ban enforcement:** Banning a user invalidates future logins but does
+  not revoke existing JWTs. Production solution: maintain a Redis token
+  blacklist keyed by JWT ID (jti claim), checked in RequireAuth middleware.
+  TTL matches the token's remaining lifetime.
+
+## Admin Setup
+
+The admin account is created separately from the API server using
+a dedicated seeder script. The API server never holds admin credentials.
+
+# First time setup
+make seed-admin email=admin@yourdomain.com password=YourStrongPassword
+
+# Rotate admin password
+make seed-admin email=admin@yourdomain.com password=NewPassword --force
+
+## Security Model
+
+**Logout** is server-side. On `POST /auth/logout`, the token's unique
+ID (jti) is stored in Redis with a TTL equal to the token's remaining
+lifetime. Every protected request checks this blacklist — revoked tokens
+are rejected immediately, not just after expiry.
+
+**Ban enforcement** is real-time. When an admin bans a user, a Redis
+marker is written instantly. Every subsequent request from that user
+is rejected at the middleware layer, even if their JWT is still
+cryptographically valid.
+
+**Fail behaviour** — Redis errors on security checks fail closed
+(request rejected). Redis errors on the movie cache fail open
+(live data served). Security optimisations and performance
+optimisations have opposite failure modes by design.
